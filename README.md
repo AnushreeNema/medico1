@@ -1,6 +1,9 @@
 🧠 CareCompanion
 An intelligent, multimodal triage agent built using cutting-edge LLMs (Claude 3, Gemini, Groq) to provide real-time medical help during emergencies or general consultation using text, speech, and image inputs. Includes voice conversation support, live camera integration, and persistent memory of interactions.
 
+🤝 Contributors
+Anushree Nema – Full Stack & AI Developer
+
 
 🚀 Features
 🗣 Voice + Text + Image Interaction: Users can talk or type with the assistant. It also analyzes images of injuries via webcam.
