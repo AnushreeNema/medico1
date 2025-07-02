@@ -41,3 +41,26 @@ Speech Processing	OpenAI Whisper (STT), Web Speech API (TTS)
 Image Analysis	Gemini Multimodal
 Data Storage	SQLite / MongoDB (Pluggable)
 Voice UI	Web Speech API, SpeechSynthesis, SpeechRecognition
+
+🧪 How It Works
+User opens the web app and sees a title animation ("Welcome to the Future").
+
+They can:
+
+Type or speak their medical situation.
+
+Upload a medical image (e.g., wound, injury).
+
+Open camera directly if prompted by the assistant.
+
+The assistant (Claude 3) analyzes the query.
+
+Groq classifies the severity.
+
+Gemini checks if an image is needed.
+
+Gemini multimodal analyzes any image provided.
+
+The assistant responds via voice + text, asking guided questions.
+
+All chat, media, and user details are saved to the DB.
