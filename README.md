@@ -65,6 +65,6 @@ In an emergency or general consultation, users often panic and struggle to get p
 
 ---
 
-## 📸 Screenshot: Patient Upload Feature
+## 📸 Screenshot
 
-![Patient Upload](./screenshots/image1.png)
+![Medico](./screenshots/image1.png)
