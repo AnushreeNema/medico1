@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>FutureMedicine</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+        height: 100vh;
+        display: flex;
+        font-family: Arial, sans-serif;
+        color: white;
+      }
+
+      .main-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .title-text {
+        font-size: 2rem;
+        font-weight: bold;
+        text-align: center;
+        color: white; /* Change to white */
+        margin-top: 30px;
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 100;
+        margin-bottom: 40px; /* Adds spacing between title and circle */
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+          opacity: 0.7;
+        }
+        50% {
+          transform: scale(1.1);
+          opacity: 1;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 0.7;
+        }
+      }
+
+      .text {
+        margin-top: 20px;
+        font-size: 1.2rem;
+      }
+
+      .chat-container {
+        width: 35%;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.4);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+
+      .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 20px;
+      }
+
+      .chat-message {
+        max-width: 80%;
+        padding: 10px 15px;
+        margin-bottom: 10px;
+        border-radius: 12px;
+        line-height: 1.4;
+        word-wrap: break-word;
+      }
+
+      .user {
+        background-color: rgba(0, 123, 255, 0.3);
+        align-self: flex-end;
+        text-align: right;
+      }
+
+      .ai {
+        background-color: rgba(255, 255, 255, 0.1);
+        align-self: flex-start;
+      }
+
+      video,
+      canvas {
+        width: 100%;
+        max-height: 200px;
+        border-radius: 10px;
+        margin-top: 10px;
+        display: none;
+      }
+
+      .input-bar {
+        position: sticky;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 10px;
+        display: flex;
+        gap: 10px;
+        z-index: 10;
+      }
+
+      #userInput {
+        flex: 1;
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+      }
+
+      button {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 8px;
+        background-color: #00c6ff;
+        color: white;
+        cursor: pointer;
+      }
+
+      #captureBtn {
+        display: none;
+        margin: 10px 0;
+      }
+
+      #live-transcript {
+        font-style: italic;
+        opacity: 0.7;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="main-container">
+      <div id="title" class="title-text"></div>
+      <div class="circle"></div>
+      <div class="text" id="output"></div>
+    </div>
+
+    <div class="chat-container">
+      <div class="chat-messages" id="chat">
+        <video id="webcam" autoplay></video>
+        <canvas id="snapshot"></canvas>
+        <button id="captureBtn" onclick="captureAndSend()">Capture</button>
+      </div>
+
+      <div class="input-bar">
+        <input
+          id="userInput"
+          type="text"
+          placeholder="Describe your issue..."
+        />
+        <button onclick="sendMessage()">Send</button>
+        <button onclick="startVoice()">🎤</button>
+      </div>
+    </div>
+
+    <script>
+      // Typing animation
+      window.addEventListener("DOMContentLoaded", () => {
+        const title = "Welcome to the Future";
+        const titleEl = document.getElementById("title");
+        let index = 0;
+
+        function typeLetter() {
+          if (index < title.length) {
+            titleEl.textContent += title[index];
+            index++;
+            setTimeout(typeLetter, 150);
+          }
+        }
+
+        typeLetter();
+      });
+
+      const chat = document.getElementById("chat");
+      const webcam = document.getElementById("webcam");
+      const canvas = document.getElementById("snapshot");
+      const captureBtn = document.getElementById("captureBtn");
+      const inputField = document.getElementById("userInput");
+
+      let stream = null;
+
+      function addChatMessage(content, isUser = false) {
+        const message = document.createElement("div");
+        message.className = "chat-message " + (isUser ? "user" : "ai");
+        message.textContent = content;
+        chat.insertBefore(message, webcam);
+        chat.scrollTop = chat.scrollHeight;
+
+        if (!isUser) speakAssistant(content);
+      }
+
+      function speakAssistant(text) {
+        stopAssistantSpeaking();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "en-US";
+        window.speechSynthesis.speak(utterance);
+      }
+
+      function stopAssistantSpeaking() {
+        window.speechSynthesis.cancel();
+      }
+
+      function openCamera() {
+        navigator.mediaDevices
+          .getUserMedia({ video: true })
+          .then((mediaStream) => {
+            stream = mediaStream;
+            webcam.srcObject = mediaStream;
+            webcam.style.display = "block";
+            captureBtn.style.display = "inline-block";
+          })
+          .catch((err) => {
+            addChatMessage(" Could not access camera.");
+            console.error("Camera error:", err);
+          });
+      }
+
+      function closeCamera() {
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop());
+          webcam.srcObject = null;
+          webcam.style.display = "none";
+          captureBtn.style.display = "none";
+          stream = null;
+        }
+      }
+
+      async function sendMessage() {
+        const text = inputField.value;
+        if (!text) return;
+
+        addChatMessage(text, true);
+        inputField.value = "";
+
+        const response = await fetch("http://localhost:8000/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text }),
+        });
+
+        const data = await response.json();
+        addChatMessage(data.reply, false);
+
+        if (data.request_image) openCamera();
+      }
+
+      async function captureAndSend() {
+        const context = canvas.getContext("2d");
+        canvas.width = webcam.videoWidth;
+        canvas.height = webcam.videoHeight;
+        context.drawImage(webcam, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob(async function (blob) {
+          const formData = new FormData();
+          formData.append("image", blob, "capture.jpg");
+
+          const response = await fetch("http://localhost:8000/analyze-image", {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await response.json();
+          addChatMessage("" + data.result, false);
+          closeCamera();
+        }, "image/jpeg");
+      }
+
+      // Real-time speech
+      let recognition;
+      window.SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (window.SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = "en-US";
+
+        recognition.onresult = async function (event) {
+          let transcript = "";
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            transcript += event.results[i][0].transcript;
+          }
+
+          let liveDiv = document.getElementById("live-transcript");
+          if (!liveDiv) {
+            liveDiv = document.createElement("div");
+            liveDiv.id = "live-transcript";
+            liveDiv.className = "chat-message user";
+            chat.appendChild(liveDiv);
+          }
+
+          liveDiv.textContent = transcript;
+          chat.scrollTop = chat.scrollHeight;
+
+          if (event.results[event.results.length - 1].isFinal) {
+            stopAssistantSpeaking();
+            recognition.stop();
+            liveDiv.remove();
+
+            addChatMessage(transcript, true);
+
+            const response = await fetch("http://localhost:8000/chat", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ message: transcript }),
+            });
+
+            const data = await response.json();
+            addChatMessage(data.reply, false);
+            if (data.request_image) openCamera();
+          }
+        };
+      }
+
+      function startVoice() {
+        if (recognition) {
+          stopAssistantSpeaking();
+          recognition.start();
+        }
+      }
+
+      // Welcome voice message
+      const msg = new SpeechSynthesisUtterance("Hi there, how are you?");
+      msg.lang = "en-US";
+      window.speechSynthesis.speak(msg);
+    </script>
+  </body>
+</html>
